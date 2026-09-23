@@ -343,7 +343,7 @@ fun Application.module() {
 
                         function downloadCard() {
                             const card = document.getElementById('licenseCard');
-                            html2canvas(card, { useCORS: true, scale: 2 }).then(canvas => {
+                            html2canvas(card, { useCORS: true, allowTaint: true, scale: 2 }).then(canvas => {
                                 const link = document.createElement('a');
                                 link.download = 'Driver_License.png';
                                 link.href = canvas.toDataURL('image/png');
@@ -375,9 +375,13 @@ fun Application.module() {
                 "2031-09-23"
             }
 
-            val randomId = (1..1000).random()
-            val genderQuery = if (params.gender == "F") "woman,portrait" else "man,portrait"
-            val photoUrl = "https://picsum.photos/seed/$randomId/200/250"
+            val photoId = (0..99).random()
+            val photoCategory = when (params.gender) {
+                "F" -> "women"
+                "M" -> "men"
+                else -> if (photoId % 2 == 0) "men" else "women"
+            }
+            val photoUrl = "https://randomuser.me/api/portraits/$photoCategory/$photoId.jpg"
 
             val rawBarcodeText = "ANSI 636000010002DL00390200DL${licenseNumber}100${params.surname.uppercase()},${params.firstName.uppercase()} DOB:${params.dob} EXP:${expDate} GENDER:${params.gender}"
             val barcodeBase64 = generatePDF417Base64(rawBarcodeText)
