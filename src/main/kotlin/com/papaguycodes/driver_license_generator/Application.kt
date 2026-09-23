@@ -31,7 +31,8 @@ data class LicenseRequest(
     val city: String,
     val address: String,
     val licenseClass: String,
-    val customDocNumber: String? = null
+    val customDocNumber: String? = null,
+    val customPhotoBase64: String? = null
 )
 
 @Serializable
@@ -106,7 +107,7 @@ fun Application.module() {
                         .card-header h3 { margin: 0; font-size: 16px; color: #0369a1; text-transform: uppercase; }
                         .card-header span { font-size: 11px; font-weight: bold; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px; }
                         .card-body { display: flex; gap: 12px; }
-                        .photo-box { width: 85px; height: 105px; background: #cbd5e1; border: 1px solid #94a3b8; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                        .photo-box { width: 85px; height: 105px; background: #cbd5e1; border: 1px solid #94a3b8; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #475569; }
                         .photo-box img { width: 100%; height: 100%; object-fit: cover; }
                         .details { flex: 1; font-size: 11px; line-height: 1.4; }
                         .details strong { color: #0369a1; display: inline-block; width: 70px; }
@@ -121,6 +122,9 @@ fun Application.module() {
                     <div class="main-layout">
                         <!-- Form Area -->
                         <div class="form-container">
+                            <label>Upload Photo</label>
+                            <input type="file" id="photoInput" accept="image/*" onchange="previewUpload(event)">
+
                             <div class="grid-2">
                                 <div>
                                     <label>First Name</label>
@@ -194,7 +198,7 @@ fun Application.module() {
                                 </div>
                                 <div class="card-body">
                                     <div class="photo-box">
-                                        <img id="cardPhoto" src="" crossorigin="anonymous" alt="Portrait Photo">
+                                        <img id="cardPhoto" src="" alt="Portrait Photo">
                                     </div>
                                     <div class="details">
                                         <div><strong>DL NO:</strong> <span id="cardDl"></span></div>
@@ -216,6 +220,19 @@ fun Application.module() {
                     </div>
 
                     <script>
+                        let uploadedBase64Photo = null;
+
+                        function previewUpload(event) {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    uploadedBase64Photo = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }
+
                         const stateCitiesMap = {
                             "AL": ["Birmingham", "Montgomery", "Huntsville", "Mobile"],
                             "AK": ["Anchorage", "Fairbanks", "Juneau", "Sitka"],
@@ -315,7 +332,8 @@ fun Application.module() {
                                 city: document.getElementById('city').value,
                                 address: document.getElementById('address').value,
                                 licenseClass: document.getElementById('licenseClass').value,
-                                customDocNumber: document.getElementById('docNumber').value || null
+                                customDocNumber: document.getElementById('docNumber').value || null,
+                                customPhotoBase64: uploadedBase64Photo
                             };
 
                             const res = await fetch('/generate', {
@@ -343,7 +361,7 @@ fun Application.module() {
 
                         function downloadCard() {
                             const card = document.getElementById('licenseCard');
-                            html2canvas(card, { useCORS: true, allowTaint: true, scale: 2 }).then(canvas => {
+                            html2canvas(card, { scale: 2 }).then(canvas => {
                                 const link = document.createElement('a');
                                 link.download = 'Driver_License.png';
                                 link.href = canvas.toDataURL('image/png');
@@ -375,13 +393,7 @@ fun Application.module() {
                 "2031-09-23"
             }
 
-            val photoId = (0..99).random()
-            val photoCategory = when (params.gender) {
-                "F" -> "women"
-                "M" -> "men"
-                else -> if (photoId % 2 == 0) "men" else "women"
-            }
-            val photoUrl = "https://randomuser.me/api/portraits/$photoCategory/$photoId.jpg"
+            val photoUrl = params.customPhotoBase64 ?: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='85' height='105' viewBox='0 0 85 105'><rect width='85' height='105' fill='%23cbd5e1'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23475569' font-size='10'>NO PHOTO</text></svg>"
 
             val rawBarcodeText = "ANSI 636000010002DL00390200DL${licenseNumber}100${params.surname.uppercase()},${params.firstName.uppercase()} DOB:${params.dob} EXP:${expDate} GENDER:${params.gender}"
             val barcodeBase64 = generatePDF417Base64(rawBarcodeText)
