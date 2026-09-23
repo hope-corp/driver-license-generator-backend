@@ -212,7 +212,6 @@ fun Application.module() {
                     </div>
 
                     <script>
-                        // Database of 50 US States and Major Cities
                         const stateCitiesMap = {
                             "AL": ["Birmingham", "Montgomery", "Huntsville", "Mobile"],
                             "AK": ["Anchorage", "Fairbanks", "Juneau", "Sitka"],
@@ -266,7 +265,6 @@ fun Application.module() {
                             "WY": ["Cheyenne", "Casper", "Laramie", "Gillette"]
                         };
 
-                        // Populate States
                         const stateSelect = document.getElementById('state');
                         Object.keys(stateCitiesMap).forEach(st => {
                             const opt = document.createElement('option');
@@ -289,7 +287,6 @@ fun Application.module() {
                         }
                         updateCities();
 
-                        // Set Default Issue Date (Today) and Auto-Calculate Expiry Date
                         const today = new Date().toISOString().split('T')[0];
                         document.getElementById('issueDate').value = today;
 
@@ -358,16 +355,14 @@ fun Application.module() {
         post("/generate") {
             val params = call.receive<LicenseRequest>()
 
-            // Handle Document Number
             val firstChar = params.firstName.firstOrNull()?.uppercaseChar() ?: 'X'
             val lastChar = params.surname.firstOrNull()?.uppercaseChar() ?: 'X'
-            val licenseNumber = if (!params.customDocNumber.isNull transatlanticBlank()) {
+            val licenseNumber = if (!params.customDocNumber.isNullOrBlank()) {
                 params.customDocNumber
             } else {
                 "${params.state}-$firstChar$lastChar-${(100000..999999).random()}"
             }
 
-            // Auto-calculate Expiry Date (+5 years from Issue Date)
             val expDate = try {
                 val issue = LocalDate.parse(params.issueDate)
                 issue.plusYears(5).format(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -375,7 +370,6 @@ fun Application.module() {
                 "2031-09-23"
             }
 
-            // AAMVA PDF417 Encoded Format Data String
             val rawBarcodeText = "ANSI 636000010002DL00390200DL${licenseNumber}100${params.surname.uppercase()},${params.firstName.uppercase()} DOB:${params.dob} EXP:${expDate} GENDER:${params.gender}"
             val barcodeBase64 = generatePDF417Base64(rawBarcodeText)
 
@@ -402,8 +396,6 @@ fun Application.module() {
         }
     }
 }
-
-private fun String?.isNullOrBlank(): Boolean = this == null || this.trim().isEmpty()
 
 fun generatePDF417Base64(text: String): String {
     val writer = PDF417Writer()
