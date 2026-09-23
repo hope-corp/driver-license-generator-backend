@@ -22,5 +22,10 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
     implementation("io.ktor:ktor-server-status-pages-jvm")
     implementation("io.ktor:ktor-server-cors-jvm")
+    
+    // ZXing Library for PDF417 Barcode Generation
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:javase:3.5.3")
+
     implementation("ch.qos.logback:logback-classic:1.4.14")
 }
